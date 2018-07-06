@@ -126,5 +126,4 @@ $RECYCLE.BIN/
 
 # End of https://www.gitignore.io/api/c,linux,macos,windows
 
-/Debug
-/.settings
+gateway-module-interface-test

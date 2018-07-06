@@ -38,7 +38,7 @@ typedef void (*gateway_module_log_t) (const char * format, ...);
 
 It contains a small test application.
 
-It is built and tested with Eclipse Oxygen.2 Release (4.7.2) and GCC 5.4.0 on Linux.
+It is built and tested with GCC 5.4.0 (Makefile) on Linux.
 
 ### Example output
 
