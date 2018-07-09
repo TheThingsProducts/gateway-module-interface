@@ -24,39 +24,37 @@
 #include <mutex>
 #include <condition_variable>
 
-extern "C"
-{
+extern "C" {
 #include "gateway-module-interface.h"
 }
 
 using namespace std;
 
-static bool init_uart(const char *uart);
+static bool init_uart(const char* uart);
 static void lock_uart(bool lock);
-static bool write_uart(uint8_t *data, size_t size);
+static bool write_uart(uint8_t* data, size_t size);
 static bool signal_wait(int timeout);
 static void signal_set(void);
-static void receive_callback(uint8_t *data, size_t size);
+static void receive_callback(uint8_t* data, size_t size);
 static void dispatch_thread(void);
 
-void LOG(const char *__restrict __format, ...);
+void LOG(const char* __restrict __format, ...);
 
-const char* UART_NAME = "/dev/ttyUSB0";
-static int _uart_fs = -1;
-static mutex lock_m;
-static mutex signal_m;
+const char*               UART_NAME = "/dev/ttyUSB0";
+static int                _uart_fs  = -1;
+static mutex              lock_m;
+static mutex              signal_m;
 static condition_variable signal_cv;
 
 int main()
 {
-    if (!init_uart(UART_NAME))
+    if(!init_uart(UART_NAME))
     {
         LOG("Failed to open '%s'. Make sure is does exist and is not opened by anyone else.", UART_NAME);
         return -1;
     }
 
-    GatewayModuleInterface_init(&lock_uart, &write_uart, &signal_wait,
-            &signal_set, &receive_callback, &LOG);
+    GatewayModuleInterface_init(&lock_uart, &write_uart, &signal_wait, &signal_set, &receive_callback, &LOG);
 
     thread t(dispatch_thread);
 
@@ -71,24 +69,19 @@ int main()
 
     // send some invalid command
     LOG("> send some invalid command");
-    GatewayModuleInterface_sendCommandWaitAnswer((GATEWAY_MODULE_CMDS_t) 8,
-            NULL, 0, NULL, 0);
+    GatewayModuleInterface_sendCommandWaitAnswer((GATEWAY_MODULE_CMDS_t)8, NULL, 0, NULL, 0);
 
     // send version request
     LOG("> send version request");
-    if (GatewayModuleInterface_sendCommandWaitAnswer(GATEWAY_MODULE_CMD_VERSION,
-            NULL, 0, (uint8_t*) &version, sizeof(version)))
+    if(GatewayModuleInterface_sendCommandWaitAnswer(GATEWAY_MODULE_CMD_VERSION, NULL, 0, (uint8_t*)&version,
+                                                    sizeof(version)))
     {
-        LOG("Version, hwrev: %d, major: %d, minor: %d, band: %d", version.hwrev,
-                version.major, version.minor, version.band);
-        LOG(
-                "Serial: %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X",
-                version.serial_number[0], version.serial_number[1],
-                version.serial_number[2], version.serial_number[3],
-                version.serial_number[4], version.serial_number[5],
-                version.serial_number[6], version.serial_number[7],
-                version.serial_number[8], version.serial_number[9],
-                version.serial_number[10], version.serial_number[11]);
+        LOG("Version, hwrev: %d, major: %d, minor: %d, band: %d", version.hwrev, version.major, version.minor,
+            version.band);
+        LOG("Serial: %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X", version.serial_number[0],
+            version.serial_number[1], version.serial_number[2], version.serial_number[3], version.serial_number[4],
+            version.serial_number[5], version.serial_number[6], version.serial_number[7], version.serial_number[8],
+            version.serial_number[9], version.serial_number[10], version.serial_number[11]);
     }
     else
     {
@@ -104,10 +97,10 @@ int main()
     return 0;
 }
 
-static bool init_uart(const char *uart)
+static bool init_uart(const char* uart)
 {
-    _uart_fs = open(uart, O_RDWR | O_NOCTTY); //Open in non blocking read/write mode
-    if (_uart_fs == -1)
+    _uart_fs = open(uart, O_RDWR | O_NOCTTY); // Open in non blocking read/write mode
+    if(_uart_fs == -1)
     {
         return false;
     }
@@ -126,7 +119,7 @@ static bool init_uart(const char *uart)
 
 static void lock_uart(bool lock)
 {
-    if (lock)
+    if(lock)
     {
         LOG("Lock");
         lock_m.lock();
@@ -138,12 +131,12 @@ static void lock_uart(bool lock)
     }
 }
 
-static bool write_uart(uint8_t *data, size_t size)
+static bool write_uart(uint8_t* data, size_t size)
 {
-    if (size > 0)
+    if(size > 0)
     {
         size_t w = write(_uart_fs, data, size);
-        if (w != size)
+        if(w != size)
         {
             return false;
         }
@@ -155,8 +148,7 @@ static bool signal_wait(int timeout)
 {
     LOG("Wait signal");
     unique_lock<mutex> lck(signal_m);
-    return signal_cv.wait_for(lck, chrono::milliseconds(timeout))
-            != cv_status::timeout;
+    return signal_cv.wait_for(lck, chrono::milliseconds(timeout)) != cv_status::timeout;
 }
 
 static void signal_set(void)
@@ -166,7 +158,7 @@ static void signal_set(void)
     signal_cv.notify_one();
 }
 
-static void receive_callback(uint8_t *data, size_t size)
+static void receive_callback(uint8_t* data, size_t size)
 {
     LOG("TODO: Handle received: %i", size);
 }
@@ -174,10 +166,10 @@ static void receive_callback(uint8_t *data, size_t size)
 static void dispatch_thread(void)
 {
     char c;
-    while (true)
+    while(true)
     {
         int r = read(_uart_fs, &c, 1);
-        if (r != 1)
+        if(r != 1)
         {
             LOG("Read returned code: %i", r);
             break;
@@ -188,7 +180,7 @@ static void dispatch_thread(void)
     cout << "Thread exit." << endl;
 }
 
-void LOG(const char *__restrict __format, ...)
+void LOG(const char* __restrict __format, ...)
 {
     va_list args;
     va_start(args, __format);
@@ -196,4 +188,3 @@ void LOG(const char *__restrict __format, ...)
     printf("\r\n");
     va_end(args);
 }
-
